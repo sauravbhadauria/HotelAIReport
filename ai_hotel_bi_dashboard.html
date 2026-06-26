@@ -1,0 +1,1053 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Hotel Business Intelligence (BI) Assistant</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background: #f0f2f5; }
+        .glass-card { background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); }
+        .gradient-text { background: linear-gradient(135deg, #667eea, #764ba2); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .card-hover { transition: all 0.3s ease; }
+        .card-hover:hover { transform: translateY(-4px); box-shadow: 0 20px 40px rgba(0,0,0,0.1); }
+        .pulse-dot { animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .fade-in { animation: fadeIn 0.5s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .metric-card { position: relative; overflow: hidden; }
+        .metric-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
+        .metric-green::before { background: linear-gradient(90deg, #10b981, #34d399); }
+        .metric-yellow::before { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+        .metric-red::before { background: linear-gradient(90deg, #ef4444, #f87171); }
+        .metric-blue::before { background: linear-gradient(90deg, #3b82f6, #60a5fa); }
+        .metric-purple::before { background: linear-gradient(90deg, #8b5cf6, #a78bfa); }
+        .drag-active { border: 2px dashed #667eea !important; background: #f0f4ff !important; }
+        .sidebar-item { transition: all 0.2s; }
+        .sidebar-item:hover, .sidebar-item.active { background: #f0f4ff; color: #667eea; }
+        .recommendation-card { border-left: 4px solid #10b981; }
+        .alert-card { border-left: 4px solid #ef4444; }
+        .warning-card { border-left: 4px solid #f59e0b; }
+        .progress-ring { transform: rotate(-90deg); }
+        .tab-btn { transition: all 0.2s; }
+        .tab-btn.active { background: #667eea; color: white; }
+        .scroll-hide::-webkit-scrollbar { display: none; }
+        .scroll-hide { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="min-h-screen">
+
+<!-- Header -->
+<header class="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex items-center justify-between h-16">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-lg">
+                    <i class="fas fa-hotel"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold gradient-text">AI Hotel BI</h1>
+                    <p class="text-xs text-gray-500">Business Intelligence Assistant</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-4">
+                <div class="hidden md:flex items-center gap-2 bg-green-50 px-3 py-1.5 rounded-full">
+                    <span class="w-2 h-2 bg-green-500 rounded-full pulse-dot"></span>
+                    <span class="text-sm text-green-700 font-medium">AI Ready</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="text-sm text-gray-600">Hotel Grand Plaza</span>
+                    <img src="https://ui-avatars.com/api/?name=Hotel+Grand&background=667eea&color=fff&size=32" class="w-8 h-8 rounded-full" alt="Hotel">
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <div class="flex gap-6">
+        <!-- Sidebar -->
+        <aside class="hidden lg:block w-64 flex-shrink-0">
+            <div class="glass-card rounded-2xl shadow-sm p-4 sticky top-24">
+                <nav class="space-y-1">
+                    <button onclick="showSection('dashboard')" id="nav-dashboard" class="sidebar-item active w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left text-sm font-medium">
+                        <i class="fas fa-chart-line w-5"></i> Dashboard
+                    </button>
+                    <button onclick="showSection('upload')" id="nav-upload" class="sidebar-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left text-sm font-medium text-gray-600">
+                        <i class="fas fa-cloud-upload-alt w-5"></i> Upload Reports
+                    </button>
+                    <button onclick="showSection('revenue')" id="nav-revenue" class="sidebar-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left text-sm font-medium text-gray-600">
+                        <i class="fas fa-rupee-sign w-5"></i> Revenue Intelligence
+                    </button>
+                    <button onclick="showSection('insights')" id="nav-insights" class="sidebar-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left text-sm font-medium text-gray-600">
+                        <i class="fas fa-lightbulb w-5"></i> Owner Insights
+                    </button>
+                    <button onclick="showSection('forecast')" id="nav-forecast" class="sidebar-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left text-sm font-medium text-gray-600">
+                        <i class="fas fa-chart-bar w-5"></i> Forecasting
+                    </button>
+                    <button onclick="showSection('weekly')" id="nav-weekly" class="sidebar-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left text-sm font-medium text-gray-600">
+                        <i class="fas fa-file-alt w-5"></i> Weekly CEO Report
+                    </button>
+                    <button onclick="showSection('chat')" id="nav-chat" class="sidebar-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left text-sm font-medium text-gray-600">
+                        <i class="fas fa-comments w-5"></i> AI Chat Advisor
+                    </button>
+                </nav>
+                <div class="mt-6 pt-6 border-t border-gray-100">
+                    <div class="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl p-4">
+                        <p class="text-xs font-semibold text-indigo-700 mb-1">Pro Tip</p>
+                        <p class="text-xs text-gray-600">Upload daily reports before 10 AM for real-time insights.</p>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 min-w-0">
+
+            <!-- DASHBOARD SECTION -->
+            <div id="section-dashboard" class="fade-in">
+                <!-- Date & Actions -->
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-900">Executive Business Summary</h2>
+                        <p class="text-gray-500 mt-1">26 June 2026 <span class="text-gray-300">|</span> Hotel Grand Plaza</p>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <button onclick="showSection('upload')" class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl font-medium text-sm transition-colors shadow-lg shadow-indigo-200 flex items-center gap-2">
+                            <i class="fas fa-plus"></i> Upload Report
+                        </button>
+                        <button onclick="generateDemoData()" class="bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 px-5 py-2.5 rounded-xl font-medium text-sm transition-colors flex items-center gap-2">
+                            <i class="fas fa-magic"></i> Demo Data
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Business Health Banner -->
+                <div class="glass-card rounded-2xl shadow-sm p-6 mb-6 metric-green metric-card">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-4">
+                            <div class="w-14 h-14 bg-green-100 rounded-2xl flex items-center justify-center text-green-600 text-2xl">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-500 font-medium">Business Performance</p>
+                                <p class="text-2xl font-bold text-gray-900">Good</p>
+                                <p class="text-sm text-gray-600 mt-1">Revenue increased 12% compared to yesterday</p>
+                            </div>
+                        </div>
+                        <div class="hidden md:block">
+                            <svg class="w-20 h-20" viewBox="0 0 80 80">
+                                <circle cx="40" cy="40" r="36" fill="none" stroke="#e5e7eb" stroke-width="6"/>
+                                <circle cx="40" cy="40" r="36" fill="none" stroke="#10b981" stroke-width="6" stroke-dasharray="180" stroke-dashoffset="0" stroke-linecap="round" class="progress-ring" transform="rotate(-90 40 40)"/>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- KPI Cards -->
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                    <div class="glass-card rounded-2xl p-5 shadow-sm card-hover metric-blue metric-card">
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="text-sm text-gray-500 font-medium">Occupancy</span>
+                            <span class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-medium">+5%</span>
+                        </div>
+                        <p class="text-3xl font-bold text-gray-900" id="kpi-occupancy">85%</p>
+                        <p class="text-xs text-gray-500 mt-2">vs 80% yesterday</p>
+                    </div>
+                    <div class="glass-card rounded-2xl p-5 shadow-sm card-hover metric-purple metric-card">
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="text-sm text-gray-500 font-medium">Total Revenue</span>
+                            <span class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-medium">+12%</span>
+                        </div>
+                        <p class="text-3xl font-bold text-gray-900" id="kpi-revenue">₹1,00,800</p>
+                        <p class="text-xs text-gray-500 mt-2">vs ₹90,000 yesterday</p>
+                    </div>
+                    <div class="glass-card rounded-2xl p-5 shadow-sm card-hover metric-yellow metric-card">
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="text-sm text-gray-500 font-medium">ADR</span>
+                            <span class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-medium">+₹120</span>
+                        </div>
+                        <p class="text-3xl font-bold text-gray-900" id="kpi-adr">₹1,482</p>
+                        <p class="text-xs text-gray-500 mt-2">vs ₹1,362 yesterday</p>
+                    </div>
+                    <div class="glass-card rounded-2xl p-5 shadow-sm card-hover metric-green metric-card">
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="text-sm text-gray-500 font-medium">RevPAR</span>
+                            <span class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-medium">+8%</span>
+                        </div>
+                        <p class="text-3xl font-bold text-gray-900" id="kpi-revpar">₹1,260</p>
+                        <p class="text-xs text-gray-500 mt-2">vs ₹1,166 yesterday</p>
+                    </div>
+                </div>
+
+                <!-- Revenue Mix & Collections -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                    <div class="glass-card rounded-2xl shadow-sm p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Revenue Mix</h3>
+                        <div class="space-y-4">
+                            <div>
+                                <div class="flex justify-between text-sm mb-1">
+                                    <span class="text-gray-600">Hourly Rooms</span>
+                                    <span class="font-semibold text-gray-900">₹23,400 <span class="text-gray-400 font-normal">(23%)</span></span>
+                                </div>
+                                <div class="w-full bg-gray-100 rounded-full h-2.5">
+                                    <div class="bg-indigo-500 h-2.5 rounded-full" style="width: 23%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-sm mb-1">
+                                    <span class="text-gray-600">Day Rooms</span>
+                                    <span class="font-semibold text-gray-900">₹21,000 <span class="text-gray-400 font-normal">(21%)</span></span>
+                                </div>
+                                <div class="w-full bg-gray-100 rounded-full h-2.5">
+                                    <div class="bg-purple-500 h-2.5 rounded-full" style="width: 21%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-sm mb-1">
+                                    <span class="text-gray-600">Night Rooms</span>
+                                    <span class="font-semibold text-gray-900">₹56,400 <span class="text-gray-400 font-normal">(56%)</span></span>
+                                </div>
+                                <div class="w-full bg-gray-100 rounded-full h-2.5">
+                                    <div class="bg-emerald-500 h-2.5 rounded-full" style="width: 56%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="glass-card rounded-2xl shadow-sm p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Collections</h3>
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center text-green-600">
+                                        <i class="fas fa-money-bill-wave"></i>
+                                    </div>
+                                    <span class="text-gray-700 font-medium">Cash</span>
+                                </div>
+                                <span class="font-bold text-gray-900">₹24,800</span>
+                            </div>
+                            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center text-blue-600">
+                                        <i class="fas fa-credit-card"></i>
+                                    </div>
+                                    <span class="text-gray-700 font-medium">Cards</span>
+                                </div>
+                                <span class="font-bold text-gray-900">₹58,500</span>
+                            </div>
+                            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center text-purple-600">
+                                        <i class="fas fa-mobile-alt"></i>
+                                    </div>
+                                    <span class="text-gray-700 font-medium">EFT/UPI</span>
+                                </div>
+                                <span class="font-bold text-gray-900">₹17,500</span>
+                            </div>
+                        </div>
+                        <div class="mt-4 p-3 bg-amber-50 rounded-xl border border-amber-100">
+                            <p class="text-sm text-amber-800"><i class="fas fa-info-circle mr-1"></i> Cash collection is only 25%, indicating strong digital payment adoption.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Occupancy Analysis -->
+                <div class="glass-card rounded-2xl shadow-sm p-6 mb-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Occupancy Analysis</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="p-4 bg-green-50 rounded-xl border border-green-100">
+                            <div class="flex items-center gap-3 mb-2">
+                                <i class="fas fa-check-circle text-green-500 text-xl"></i>
+                                <span class="font-semibold text-gray-900">Standard Rooms</span>
+                            </div>
+                            <p class="text-2xl font-bold text-gray-900">90%</p>
+                            <p class="text-sm text-green-700 mt-1">Performing well</p>
+                        </div>
+                        <div class="p-4 bg-amber-50 rounded-xl border border-amber-100">
+                            <div class="flex items-center gap-3 mb-2">
+                                <i class="fas fa-exclamation-triangle text-amber-500 text-xl"></i>
+                                <span class="font-semibold text-gray-900">Deluxe Rooms</span>
+                            </div>
+                            <p class="text-2xl font-bold text-gray-900">77%</p>
+                            <p class="text-sm text-amber-700 mt-1">Below target - consider promotions</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Revenue Leakage Alerts -->
+                <div class="glass-card rounded-2xl shadow-sm p-6 mb-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                        <i class="fas fa-exclamation-circle text-red-500"></i> Revenue Leakage Alerts
+                    </h3>
+                    <div class="alert-card bg-red-50 rounded-xl p-5 mb-4">
+                        <div class="flex items-start gap-3">
+                            <i class="fas fa-door-open text-red-500 mt-1"></i>
+                            <div>
+                                <p class="font-semibold text-gray-900">8 rooms remained unsold after 8 PM</p>
+                                <p class="text-sm text-gray-600 mt-1">Estimated missed revenue: <span class="font-bold text-red-600">₹16,000</span></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI Recommendations -->
+                <div class="glass-card rounded-2xl shadow-sm p-6 mb-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                        <i class="fas fa-robot text-indigo-500"></i> AI Recommendations
+                    </h3>
+                    <div class="space-y-3">
+                        <div class="recommendation-card bg-green-50 rounded-xl p-4 flex items-start gap-3">
+                            <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center text-green-600 flex-shrink-0 mt-0.5">
+                                <i class="fas fa-arrow-up text-sm"></i>
+                            </div>
+                            <div>
+                                <p class="font-medium text-gray-900">Increase pricing for hourly bookings between 3 PM and 7 PM by 10%</p>
+                                <p class="text-sm text-gray-500 mt-1">High demand window detected</p>
+                            </div>
+                        </div>
+                        <div class="recommendation-card bg-green-50 rounded-xl p-4 flex items-start gap-3">
+                            <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center text-green-600 flex-shrink-0 mt-0.5">
+                                <i class="fas fa-gift text-sm"></i>
+                            </div>
+                            <div>
+                                <p class="font-medium text-gray-900">Offer complimentary upgrade from Standard to Deluxe after 8 PM</p>
+                                <p class="text-sm text-gray-500 mt-1">Improve Deluxe occupancy and guest satisfaction</p>
+                            </div>
+                        </div>
+                        <div class="recommendation-card bg-green-50 rounded-xl p-4 flex items-start gap-3">
+                            <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center text-green-600 flex-shrink-0 mt-0.5">
+                                <i class="fas fa-bullhorn text-sm"></i>
+                            </div>
+                            <div>
+                                <p class="font-medium text-gray-900">Promote direct bookings during low-demand morning hours</p>
+                                <p class="text-sm text-gray-500 mt-1">Reduce OTA commission costs</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Operational Insights -->
+                <div class="glass-card rounded-2xl shadow-sm p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Operational Insights</h3>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div class="text-center p-4 bg-gray-50 rounded-xl">
+                            <p class="text-2xl font-bold text-indigo-600">11</p>
+                            <p class="text-xs text-gray-500 mt-1">Rooms sold multiple times</p>
+                        </div>
+                        <div class="text-center p-4 bg-gray-50 rounded-xl">
+                            <p class="text-2xl font-bold text-purple-600">205</p>
+                            <p class="text-xs text-gray-500 mt-1">Highest revenue room</p>
+                        </div>
+                        <div class="text-center p-4 bg-gray-50 rounded-xl">
+                            <p class="text-2xl font-bold text-emerald-600">4.2h</p>
+                            <p class="text-xs text-gray-500 mt-1">Average hourly stay</p>
+                        </div>
+                        <div class="text-center p-4 bg-gray-50 rounded-xl">
+                            <p class="text-2xl font-bold text-amber-600">2-6 PM</p>
+                            <p class="text-xs text-gray-500 mt-1">Peak check-in time</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- UPLOAD SECTION -->
+            <div id="section-upload" class="hidden fade-in">
+                <div class="flex items-center justify-between mb-6">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-900">Upload PMS Reports</h2>
+                        <p class="text-gray-500 mt-1">Upload your daily reports for AI analysis</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Upload Area -->
+                    <div class="lg:col-span-2">
+                        <div id="drop-zone" class="glass-card rounded-2xl shadow-sm p-8 border-2 border-dashed border-gray-300 text-center transition-all cursor-pointer hover:border-indigo-400">
+                            <div class="w-16 h-16 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-500 text-2xl mx-auto mb-4">
+                                <i class="fas fa-cloud-upload-alt"></i>
+                            </div>
+                            <h3 class="text-lg font-semibold text-gray-900 mb-2">Drag & Drop Reports Here</h3>
+                            <p class="text-sm text-gray-500 mb-4">or click to browse files</p>
+                            <p class="text-xs text-gray-400">Supported: CSV, Excel (.xlsx), PDF</p>
+                            <input type="file" id="file-input" multiple accept=".csv,.xlsx,.pdf" class="hidden">
+                        </div>
+
+                        <!-- Supported Reports -->
+                        <div class="mt-6 glass-card rounded-2xl shadow-sm p-6">
+                            <h3 class="text-sm font-semibold text-gray-900 mb-4">Supported Report Types</h3>
+                            <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                                <div class="flex items-center gap-2 p-3 bg-gray-50 rounded-lg text-sm text-gray-600">
+                                    <i class="fas fa-file-invoice text-indigo-400"></i> Daily Revenue
+                                </div>
+                                <div class="flex items-center gap-2 p-3 bg-gray-50 rounded-lg text-sm text-gray-600">
+                                    <i class="fas fa-bed text-indigo-400"></i> Occupancy
+                                </div>
+                                <div class="flex items-center gap-2 p-3 bg-gray-50 rounded-lg text-sm text-gray-600">
+                                    <i class="fas fa-door-closed text-indigo-400"></i> Room Statistics
+                                </div>
+                                <div class="flex items-center gap-2 p-3 bg-gray-50 rounded-lg text-sm text-gray-600">
+                                    <i class="fas fa-money-check text-indigo-400"></i> Payment Collection
+                                </div>
+                                <div class="flex items-center gap-2 p-3 bg-gray-50 rounded-lg text-sm text-gray-600">
+                                    <i class="fas fa-calendar-check text-indigo-400"></i> Reservations
+                                </div>
+                                <div class="flex items-center gap-2 p-3 bg-gray-50 rounded-lg text-sm text-gray-600">
+                                    <i class="fas fa-broom text-indigo-400"></i> Housekeeping
+                                </div>
+                                <div class="flex items-center gap-2 p-3 bg-gray-50 rounded-lg text-sm text-gray-600">
+                                    <i class="fas fa-book text-indigo-400"></i> Guest Ledger
+                                </div>
+                                <div class="flex items-center gap-2 p-3 bg-gray-50 rounded-lg text-sm text-gray-600">
+                                    <i class="fas fa-times-circle text-indigo-400"></i> Cancellations
+                                </div>
+                                <div class="flex items-center gap-2 p-3 bg-gray-50 rounded-lg text-sm text-gray-600">
+                                    <i class="fas fa-globe text-indigo-400"></i> OTA Production
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Upload History -->
+                    <div class="glass-card rounded-2xl shadow-sm p-6">
+                        <h3 class="text-sm font-semibold text-gray-900 mb-4">Recent Uploads</h3>
+                        <div class="space-y-3" id="upload-history">
+                            <div class="flex items-center gap-3 p-3 bg-green-50 rounded-xl border border-green-100">
+                                <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center text-green-600">
+                                    <i class="fas fa-check"></i>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-sm font-medium text-gray-900 truncate">Daily_Revenue_26June.csv</p>
+                                    <p class="text-xs text-gray-500">Today, 9:15 AM</p>
+                                </div>
+                                <span class="text-xs text-green-600 font-medium">Processed</span>
+                            </div>
+                            <div class="flex items-center gap-3 p-3 bg-green-50 rounded-xl border border-green-100">
+                                <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center text-green-600">
+                                    <i class="fas fa-check"></i>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-sm font-medium text-gray-900 truncate">Occupancy_Report_26June.xlsx</p>
+                                    <p class="text-xs text-gray-500">Today, 9:16 AM</p>
+                                </div>
+                                <span class="text-xs text-green-600 font-medium">Processed</span>
+                            </div>
+                            <div class="flex items-center gap-3 p-3 bg-green-50 rounded-xl border border-green-100">
+                                <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center text-green-600">
+                                    <i class="fas fa-check"></i>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-sm font-medium text-gray-900 truncate">Payment_Collection_26June.csv</p>
+                                    <p class="text-xs text-gray-500">Today, 9:17 AM</p>
+                                </div>
+                                <span class="text-xs text-green-600 font-medium">Processed</span>
+                            </div>
+                        </div>
+                        <div class="mt-4 p-3 bg-indigo-50 rounded-xl">
+                            <p class="text-xs text-indigo-700"><i class="fas fa-info-circle mr-1"></i> AI has analyzed 3 reports and generated insights.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- REVENUE INTELLIGENCE SECTION -->
+            <div id="section-revenue" class="hidden fade-in">
+                <div class="flex items-center justify-between mb-6">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-900">Revenue Intelligence</h2>
+                        <p class="text-gray-500 mt-1">Deep dive into revenue patterns</p>
+                    </div>
+                    <div class="flex gap-2">
+                        <button class="tab-btn active px-4 py-2 rounded-lg text-sm font-medium" onclick="setRevenueTab(this, 'category')">By Category</button>
+                        <button class="tab-btn bg-gray-100 text-gray-600 px-4 py-2 rounded-lg text-sm font-medium" onclick="setRevenueTab(this, 'source')">By Source</button>
+                        <button class="tab-btn bg-gray-100 text-gray-600 px-4 py-2 rounded-lg text-sm font-medium" onclick="setRevenueTab(this, 'payment')">By Payment</button>
+                        <button class="tab-btn bg-gray-100 text-gray-600 px-4 py-2 rounded-lg text-sm font-medium" onclick="setRevenueTab(this, 'shift')">By Shift</button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                    <div class="glass-card rounded-2xl shadow-sm p-6">
+                        <h3 class="text-sm font-semibold text-gray-900 mb-4">Revenue by Room Category</h3>
+                        <canvas id="revenueCategoryChart" height="200"></canvas>
+                    </div>
+                    <div class="glass-card rounded-2xl shadow-sm p-6">
+                        <h3 class="text-sm font-semibold text-gray-900 mb-4">Revenue by Booking Source</h3>
+                        <canvas id="revenueSourceChart" height="200"></canvas>
+                    </div>
+                </div>
+
+                <div class="glass-card rounded-2xl shadow-sm p-6">
+                    <h3 class="text-sm font-semibold text-gray-900 mb-4">Revenue by Hour</h3>
+                    <canvas id="revenueHourChart" height="100"></canvas>
+                </div>
+            </div>
+
+            <!-- OWNER INSIGHTS SECTION -->
+            <div id="section-insights" class="hidden fade-in">
+                <div class="flex items-center justify-between mb-6">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-900">Owner Insights</h2>
+                        <p class="text-gray-500 mt-1">Contextual analysis beyond raw numbers</p>
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    <div class="glass-card rounded-2xl shadow-sm p-6">
+                        <div class="flex items-start gap-4">
+                            <div class="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center text-indigo-600 text-xl flex-shrink-0">
+                                <i class="fas fa-chart-line"></i>
+                            </div>
+                            <div class="flex-1">
+                                <h3 class="font-semibold text-gray-900">Occupancy Trend Analysis</h3>
+                                <p class="text-gray-600 mt-2">Occupancy dropped 8% compared to last Friday. The decline was mainly due to a <span class="font-semibold text-red-500">40% reduction in OTA bookings</span> from Booking.com and MakeMyTrip. Direct bookings remained stable.</p>
+                                <div class="mt-3 flex gap-2">
+                                    <span class="text-xs bg-red-50 text-red-700 px-2 py-1 rounded-full">Action Required</span>
+                                    <span class="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">OTA Strategy</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="glass-card rounded-2xl shadow-sm p-6">
+                        <div class="flex items-start gap-4">
+                            <div class="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center text-amber-600 text-xl flex-shrink-0">
+                                <i class="fas fa-exclamation-triangle"></i>
+                            </div>
+                            <div class="flex-1">
+                                <h3 class="font-semibold text-gray-900">Missed Revenue Analysis</h3>
+                                <div class="mt-3 grid grid-cols-2 md:grid-cols-4 gap-3">
+                                    <div class="p-3 bg-red-50 rounded-lg text-center">
+                                        <p class="text-xl font-bold text-red-600">8</p>
+                                        <p class="text-xs text-gray-600">Unsold rooms</p>
+                                    </div>
+                                    <div class="p-3 bg-amber-50 rounded-lg text-center">
+                                        <p class="text-xl font-bold text-amber-600">3</p>
+                                        <p class="text-xs text-gray-600">Early check-outs</p>
+                                    </div>
+                                    <div class="p-3 bg-blue-50 rounded-lg text-center">
+                                        <p class="text-xl font-bold text-blue-600">5</p>
+                                        <p class="text-xs text-gray-600">Low ADR dates</p>
+                                    </div>
+                                    <div class="p-3 bg-purple-50 rounded-lg text-center">
+                                        <p class="text-xl font-bold text-purple-600">2</p>
+                                        <p class="text-xs text-gray-600">Blocked not sold</p>
+                                    </div>
+                                </div>
+                                <p class="text-gray-600 mt-3">Estimated total missed revenue: <span class="font-bold text-red-600 text-lg">₹92,000</span> this week.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="glass-card rounded-2xl shadow-sm p-6">
+                        <div class="flex items-start gap-4">
+                            <div class="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center text-emerald-600 text-xl flex-shrink-0">
+                                <i class="fas fa-users"></i>
+                            </div>
+                            <div class="flex-1">
+                                <h3 class="font-semibold text-gray-900">Guest Behavior Insights</h3>
+                                <div class="mt-3 grid grid-cols-2 md:grid-cols-4 gap-3">
+                                    <div class="p-3 bg-gray-50 rounded-lg text-center">
+                                        <p class="text-xl font-bold text-indigo-600">32%</p>
+                                        <p class="text-xs text-gray-600">Repeat guests</p>
+                                    </div>
+                                    <div class="p-3 bg-gray-50 rounded-lg text-center">
+                                        <p class="text-xl font-bold text-purple-600">45%</p>
+                                        <p class="text-xs text-gray-600">Walk-in ratio</p>
+                                    </div>
+                                    <div class="p-3 bg-gray-50 rounded-lg text-center">
+                                        <p class="text-xl font-bold text-emerald-600">2.3</p>
+                                        <p class="text-xs text-gray-600">Avg stay (days)</p>
+                                    </div>
+                                    <div class="p-3 bg-gray-50 rounded-lg text-center">
+                                        <p class="text-xl font-bold text-amber-600">Std</p>
+                                        <p class="text-xs text-gray-600">Preferred room</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="glass-card rounded-2xl shadow-sm p-6">
+                        <div class="flex items-start gap-4">
+                            <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center text-blue-600 text-xl flex-shrink-0">
+                                <i class="fas fa-user-tie"></i>
+                            </div>
+                            <div class="flex-1">
+                                <h3 class="font-semibold text-gray-900">Staff Performance</h3>
+                                <div class="mt-3 space-y-3">
+                                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                        <div class="flex items-center gap-3">
+                                            <img src="https://ui-avatars.com/api/?name=Rahul+S&background=10b981&color=fff&size=32" class="w-8 h-8 rounded-full">
+                                            <div>
+                                                <p class="text-sm font-medium text-gray-900">Rahul Sharma</p>
+                                                <p class="text-xs text-gray-500">Highest-selling receptionist</p>
+                                            </div>
+                                        </div>
+                                        <span class="text-sm font-bold text-green-600">₹45,200</span>
+                                    </div>
+                                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                        <div class="flex items-center gap-3">
+                                            <img src="https://ui-avatars.com/api/?name=Priya+M&background=8b5cf6&color=fff&size=32" class="w-8 h-8 rounded-full">
+                                            <div>
+                                                <p class="text-sm font-medium text-gray-900">Priya Mehta</p>
+                                                <p class="text-xs text-gray-500">Fastest check-in (avg 3.2 min)</p>
+                                            </div>
+                                        </div>
+                                        <span class="text-sm font-bold text-purple-600">42 check-ins</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FORECASTING SECTION -->
+            <div id="section-forecast" class="hidden fade-in">
+                <div class="flex items-center justify-between mb-6">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-900">Forecasting</h2>
+                        <p class="text-gray-500 mt-1">AI-powered predictions for tomorrow</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <div class="glass-card rounded-2xl p-6 shadow-sm text-center metric-blue metric-card">
+                        <p class="text-sm text-gray-500 mb-2">Predicted Occupancy</p>
+                        <p class="text-4xl font-bold text-gray-900">82%</p>
+                        <p class="text-xs text-gray-400 mt-2">Confidence: 89%</p>
+                    </div>
+                    <div class="glass-card rounded-2xl p-6 shadow-sm text-center metric-purple metric-card">
+                        <p class="text-sm text-gray-500 mb-2">Expected Revenue</p>
+                        <p class="text-4xl font-bold text-gray-900">₹98,500</p>
+                        <p class="text-xs text-gray-400 mt-2">Confidence: 85%</p>
+                    </div>
+                    <div class="glass-card rounded-2xl p-6 shadow-sm text-center metric-green metric-card">
+                        <p class="text-sm text-gray-500 mb-2">Staff Required</p>
+                        <p class="text-4xl font-bold text-gray-900">6</p>
+                        <p class="text-xs text-gray-400 mt-2">Front desk + Housekeeping</p>
+                    </div>
+                </div>
+
+                <div class="glass-card rounded-2xl shadow-sm p-6 mb-6">
+                    <h3 class="text-sm font-semibold text-gray-900 mb-4">7-Day Occupancy Forecast</h3>
+                    <canvas id="forecastChart" height="120"></canvas>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="glass-card rounded-2xl shadow-sm p-6">
+                        <h3 class="text-sm font-semibold text-gray-900 mb-4">Resource Planning</h3>
+                        <div class="space-y-3">
+                            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                <span class="text-sm text-gray-600">Linen Requirements</span>
+                                <span class="font-bold text-gray-900">68 sets</span>
+                            </div>
+                            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                <span class="text-sm text-gray-600">Housekeeping Workload</span>
+                                <span class="font-bold text-gray-900">High</span>
+                            </div>
+                            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                <span class="text-sm text-gray-600">Breakfast Prep</span>
+                                <span class="font-bold text-gray-900">52 guests</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="glass-card rounded-2xl shadow-sm p-6">
+                        <h3 class="text-sm font-semibold text-gray-900 mb-4">Pricing Suggestions</h3>
+                        <div class="space-y-3">
+                            <div class="recommendation-card bg-green-50 rounded-xl p-3">
+                                <p class="text-sm font-medium text-gray-900">Increase Standard room rate by 8%</p>
+                                <p class="text-xs text-gray-500">High demand expected</p>
+                            </div>
+                            <div class="recommendation-card bg-green-50 rounded-xl p-3">
+                                <p class="text-sm font-medium text-gray-900">Offer hourly package 11 AM - 3 PM</p>
+                                <p class="text-xs text-gray-500">Fill low-demand window</p>
+                            </div>
+                            <div class="recommendation-card bg-green-50 rounded-xl p-3">
+                                <p class="text-sm font-medium text-gray-900">Corporate rate adjustment: -5%</p>
+                                <p class="text-xs text-gray-500">Boost weekday bookings</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- WEEKLY CEO REPORT SECTION -->
+            <div id="section-weekly" class="hidden fade-in">
+                <div class="flex items-center justify-between mb-6">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-900">Weekly CEO Report</h2>
+                        <p class="text-gray-500 mt-1">Week of 20 - 26 June 2026</p>
+                    </div>
+                    <button class="bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 px-4 py-2 rounded-xl font-medium text-sm transition-colors flex items-center gap-2">
+                        <i class="fas fa-download"></i> Export PDF
+                    </button>
+                </div>
+
+                <div class="glass-card rounded-2xl shadow-sm p-8 mb-6">
+                    <h3 class="text-xl font-bold text-gray-900 mb-6">This Week at a Glance</h3>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-6 mb-6">
+                        <div class="text-center">
+                            <p class="text-3xl font-bold text-gray-900">₹7.2L</p>
+                            <p class="text-sm text-gray-500 mt-1">Revenue <span class="text-green-600 font-medium">+8%</span></p>
+                        </div>
+                        <div class="text-center">
+                            <p class="text-3xl font-bold text-gray-900">81%</p>
+                            <p class="text-sm text-gray-500 mt-1">Occupancy</p>
+                        </div>
+                        <div class="text-center">
+                            <p class="text-3xl font-bold text-gray-900">₹1,560</p>
+                            <p class="text-sm text-gray-500 mt-1">ADR <span class="text-green-600 font-medium">+₹120</span></p>
+                        </div>
+                        <div class="text-center">
+                            <p class="text-3xl font-bold text-gray-900">₹1,265</p>
+                            <p class="text-sm text-gray-500 mt-1">RevPAR <span class="text-green-600 font-medium">+6%</span></p>
+                        </div>
+                    </div>
+                    <div class="border-t border-gray-100 pt-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <p class="text-sm font-semibold text-gray-700 mb-2">Best Performing</p>
+                                <p class="text-lg text-gray-900">Hourly Deluxe <span class="text-green-600 text-sm font-medium">+15% revenue</span></p>
+                            </div>
+                            <div>
+                                <p class="text-sm font-semibold text-gray-700 mb-2">Lowest Performing</p>
+                                <p class="text-lg text-gray-900">Corporate <span class="text-red-500 text-sm font-medium">-12% bookings</span></p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-6 p-4 bg-red-50 rounded-xl border border-red-100">
+                        <p class="text-sm text-red-800"><i class="fas fa-exclamation-circle mr-2"></i>Estimated lost revenue: <span class="font-bold">₹92,000</span> due to unsold inventory</p>
+                    </div>
+                    <div class="mt-4 recommendation-card bg-green-50 rounded-xl p-4">
+                        <p class="text-sm font-medium text-gray-900"><i class="fas fa-lightbulb text-green-600 mr-2"></i>Recommendation: Increase Friday and Saturday rates by 15% and launch a weekday Day Use package.</p>
+                    </div>
+                </div>
+
+                <div class="glass-card rounded-2xl shadow-sm p-6">
+                    <h3 class="text-sm font-semibold text-gray-900 mb-4">Weekly Revenue Trend</h3>
+                    <canvas id="weeklyChart" height="100"></canvas>
+                </div>
+            </div>
+
+            <!-- AI CHAT ADVISOR SECTION -->
+            <div id="section-chat" class="hidden fade-in">
+                <div class="flex items-center justify-between mb-6">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-900">AI Chat Advisor</h2>
+                        <p class="text-gray-500 mt-1">Ask anything about your hotel business</p>
+                    </div>
+                </div>
+
+                <div class="glass-card rounded-2xl shadow-sm flex flex-col" style="height: 600px;">
+                    <!-- Chat Messages -->
+                    <div id="chat-messages" class="flex-1 overflow-y-auto p-6 space-y-4 scroll-hide">
+                        <div class="flex items-start gap-3">
+                            <div class="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white flex-shrink-0">
+                                <i class="fas fa-robot text-sm"></i>
+                            </div>
+                            <div class="bg-gray-100 rounded-2xl rounded-tl-sm px-4 py-3 max-w-lg">
+                                <p class="text-sm text-gray-700">Hello! I'm your AI Hotel Business Advisor. I can help you with:</p>
+                                <ul class="text-sm text-gray-600 mt-2 space-y-1 ml-4 list-disc">
+                                    <li>Revenue analysis and trends</li>
+                                    <li>Occupancy insights</li>
+                                    <li>Pricing recommendations</li>
+                                    <li>Operational improvements</li>
+                                </ul>
+                                <p class="text-sm text-gray-700 mt-2">What would you like to know today?</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Questions -->
+                    <div class="px-6 pb-2">
+                        <div class="flex gap-2 overflow-x-auto scroll-hide pb-2">
+                            <button onclick="askQuestion('Why did revenue drop yesterday?')" class="whitespace-nowrap px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-full text-xs font-medium hover:bg-indigo-100 transition">Why did revenue drop?</button>
+                            <button onclick="askQuestion('Which room type is most profitable?')" class="whitespace-nowrap px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-full text-xs font-medium hover:bg-indigo-100 transition">Most profitable room?</button>
+                            <button onclick="askQuestion('What should I do to improve occupancy?')" class="whitespace-nowrap px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-full text-xs font-medium hover:bg-indigo-100 transition">Improve occupancy?</button>
+                            <button onclick="askQuestion('How is my staff performing?')" class="whitespace-nowrap px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-full text-xs font-medium hover:bg-indigo-100 transition">Staff performance?</button>
+                        </div>
+                    </div>
+
+                    <!-- Input -->
+                    <div class="p-4 border-t border-gray-100">
+                        <div class="flex gap-3">
+                            <input type="text" id="chat-input" placeholder="Ask me anything about your hotel..." 
+                                class="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                onkeypress="if(event.key==='Enter') sendChat()">
+                            <button onclick="sendChat()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-3 rounded-xl transition-colors">
+                                <i class="fas fa-paper-plane"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+</div>
+
+<script>
+// Navigation
+function showSection(sectionId) {
+    // Hide all sections
+    document.querySelectorAll('[id^="section-"]').forEach(el => el.classList.add('hidden'));
+    document.querySelectorAll('.sidebar-item').forEach(el => {
+        el.classList.remove('active', 'text-indigo-600');
+        el.classList.add('text-gray-600');
+    });
+
+    // Show selected section
+    document.getElementById('section-' + sectionId).classList.remove('hidden');
+    document.getElementById('nav-' + sectionId).classList.add('active', 'text-indigo-600');
+    document.getElementById('nav-' + sectionId).classList.remove('text-gray-600');
+
+    // Initialize charts if needed
+    if (sectionId === 'revenue') setTimeout(initRevenueCharts, 100);
+    if (sectionId === 'forecast') setTimeout(initForecastChart, 100);
+    if (sectionId === 'weekly') setTimeout(initWeeklyChart, 100);
+}
+
+// Drag & Drop
+const dropZone = document.getElementById('drop-zone');
+const fileInput = document.getElementById('file-input');
+
+dropZone.addEventListener('click', () => fileInput.click());
+dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('drag-active'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-active'));
+dropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropZone.classList.remove('drag-active');
+    handleFiles(e.dataTransfer.files);
+});
+fileInput.addEventListener('change', (e) => handleFiles(e.target.files));
+
+function handleFiles(files) {
+    const history = document.getElementById('upload-history');
+    Array.from(files).forEach(file => {
+        const div = document.createElement('div');
+        div.className = 'flex items-center gap-3 p-3 bg-indigo-50 rounded-xl border border-indigo-100 animate-pulse';
+        div.innerHTML = `
+            <div class="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center text-indigo-600">
+                <i class="fas fa-spinner fa-spin"></i>
+            </div>
+            <div class="flex-1 min-w-0">
+                <p class="text-sm font-medium text-gray-900 truncate">${file.name}</p>
+                <p class="text-xs text-gray-500">Processing...</p>
+            </div>
+        `;
+        history.insertBefore(div, history.firstChild);
+
+        setTimeout(() => {
+            div.className = 'flex items-center gap-3 p-3 bg-green-50 rounded-xl border border-green-100';
+            div.innerHTML = `
+                <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center text-green-600">
+                    <i class="fas fa-check"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm font-medium text-gray-900 truncate">${file.name}</p>
+                    <p class="text-xs text-gray-500">Just now</p>
+                </div>
+                <span class="text-xs text-green-600 font-medium">Processed</span>
+            `;
+        }, 2000);
+    });
+}
+
+// Generate Demo Data
+function generateDemoData() {
+    const occupancy = Math.floor(Math.random() * 30) + 70;
+    const revenue = Math.floor(Math.random() * 50000) + 80000;
+    const adr = Math.floor(Math.random() * 500) + 1200;
+    const revpar = Math.floor(adr * occupancy / 100);
+
+    document.getElementById('kpi-occupancy').textContent = occupancy + '%';
+    document.getElementById('kpi-revenue').textContent = '₹' + revenue.toLocaleString('en-IN');
+    document.getElementById('kpi-adr').textContent = '₹' + adr.toLocaleString('en-IN');
+    document.getElementById('kpi-revpar').textContent = '₹' + revpar.toLocaleString('en-IN');
+}
+
+// Revenue Charts
+function initRevenueCharts() {
+    // Category Chart
+    const ctx1 = document.getElementById('revenueCategoryChart');
+    if (ctx1 && !ctx1.chart) {
+        ctx1.chart = new Chart(ctx1, {
+            type: 'doughnut',
+            data: {
+                labels: ['Standard', 'Deluxe', 'Suite', 'Hourly'],
+                datasets: [{
+                    data: [45000, 32000, 15000, 8800],
+                    backgroundColor: ['#667eea', '#8b5cf6', '#10b981', '#f59e0b'],
+                    borderWidth: 0
+                }]
+            },
+            options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+        });
+    }
+
+    // Source Chart
+    const ctx2 = document.getElementById('revenueSourceChart');
+    if (ctx2 && !ctx2.chart) {
+        ctx2.chart = new Chart(ctx2, {
+            type: 'bar',
+            data: {
+                labels: ['Direct', 'Booking.com', 'MakeMyTrip', 'Goibibo', 'Walk-in', 'Corporate'],
+                datasets: [{
+                    label: 'Revenue (₹)',
+                    data: [28000, 22000, 18000, 12000, 15000, 8000],
+                    backgroundColor: '#667eea',
+                    borderRadius: 6
+                }]
+            },
+            options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+        });
+    }
+
+    // Hour Chart
+    const ctx3 = document.getElementById('revenueHourChart');
+    if (ctx3 && !ctx3.chart) {
+        ctx3.chart = new Chart(ctx3, {
+            type: 'line',
+            data: {
+                labels: ['6AM', '8AM', '10AM', '12PM', '2PM', '4PM', '6PM', '8PM', '10PM'],
+                datasets: [{
+                    label: 'Revenue',
+                    data: [2000, 3500, 8000, 12000, 18000, 22000, 15000, 8000, 3000],
+                    borderColor: '#667eea',
+                    backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 4,
+                    pointBackgroundColor: '#667eea'
+                }]
+            },
+            options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+        });
+    }
+}
+
+function setRevenueTab(btn, tab) {
+    document.querySelectorAll('#section-revenue .tab-btn').forEach(b => {
+        b.classList.remove('active');
+        b.classList.add('bg-gray-100', 'text-gray-600');
+    });
+    btn.classList.add('active');
+    btn.classList.remove('bg-gray-100', 'text-gray-600');
+}
+
+// Forecast Chart
+function initForecastChart() {
+    const ctx = document.getElementById('forecastChart');
+    if (ctx && !ctx.chart) {
+        ctx.chart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+                datasets: [{
+                    label: 'Actual',
+                    data: [75, 68, 72, 80, 85, 82, null],
+                    borderColor: '#667eea',
+                    backgroundColor: '#667eea',
+                    pointRadius: 5
+                }, {
+                    label: 'Forecast',
+                    data: [null, null, null, null, null, 82, 88],
+                    borderColor: '#10b981',
+                    backgroundColor: '#10b981',
+                    borderDash: [5, 5],
+                    pointRadius: 5
+                }]
+            },
+            options: { responsive: true, scales: { y: { min: 50, max: 100 } } }
+        });
+    }
+}
+
+// Weekly Chart
+function initWeeklyChart() {
+    const ctx = document.getElementById('weeklyChart');
+    if (ctx && !ctx.chart) {
+        ctx.chart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                datasets: [{
+                    label: 'Revenue (₹)',
+                    data: [95000, 88000, 92000, 98000, 105000, 120000, 112000],
+                    backgroundColor: '#667eea',
+                    borderRadius: 6
+                }]
+            },
+            options: { responsive: true, plugins: { legend: { display: false } } }
+        });
+    }
+}
+
+// Chat
+function askQuestion(text) {
+    document.getElementById('chat-input').value = text;
+    sendChat();
+}
+
+function sendChat() {
+    const input = document.getElementById('chat-input');
+    const text = input.value.trim();
+    if (!text) return;
+
+    const messages = document.getElementById('chat-messages');
+
+    // User message
+    messages.innerHTML += `
+        <div class="flex items-start gap-3 justify-end">
+            <div class="bg-indigo-600 text-white rounded-2xl rounded-tr-sm px-4 py-3 max-w-lg">
+                <p class="text-sm">${text}</p>
+            </div>
+            <div class="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center text-gray-600 flex-shrink-0">
+                <i class="fas fa-user text-sm"></i>
+            </div>
+        </div>
+    `;
+
+    input.value = '';
+    messages.scrollTop = messages.scrollHeight;
+
+    // AI response
+    setTimeout(() => {
+        let response = '';
+        if (text.includes('revenue drop') || text.includes('drop')) {
+            response = 'Revenue dropped 12% compared to yesterday primarily due to lower OTA bookings (-40%) and 3 early check-outs. However, direct bookings and walk-ins remained stable. I recommend activating your OTA promotion for tomorrow and offering late checkout to reduce early departures.';
+        } else if (text.includes('profitable') || text.includes('room type')) {
+            response = 'Hourly Deluxe is your most profitable room type with a margin of 68%. It generates ₹2,100 per booking on average and has high turnover (4.2 hours average). Standard rooms have the highest volume but lower margin (45%). Consider converting one Standard to Deluxe if possible.';
+        } else if (text.includes('occupancy')) {
+            response = 'To improve occupancy: 1) Launch a "Day Use" package for 11 AM - 3 PM window (currently 35% occupancy), 2) Offer complimentary upgrades to Deluxe after 8 PM, 3) Reduce OTA rates by 5% for next 3 days to boost bookings, 4) Target corporate clients for weekday bookings.';
+        } else if (text.includes('staff')) {
+            response = 'Rahul Sharma is your top performer with ₹45,200 in revenue and 42 check-ins this week. Priya Mehta has the fastest average check-in time (3.2 minutes). Night shift (Rahul) outperforms morning shift by 18%. Consider scheduling your best performers during peak hours (2-6 PM).';
+        } else {
+            response = 'Based on your current data, I see strong digital payment adoption (75% non-cash) and good Standard room occupancy (90%). The main opportunity is improving Deluxe occupancy (77%) and reducing unsold inventory after 8 PM. Would you like specific recommendations for any of these areas?';
+        }
+
+        messages.innerHTML += `
+            <div class="flex items-start gap-3">
+                <div class="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white flex-shrink-0">
+                    <i class="fas fa-robot text-sm"></i>
+                </div>
+                <div class="bg-gray-100 rounded-2xl rounded-tl-sm px-4 py-3 max-w-lg">
+                    <p class="text-sm text-gray-700">${response}</p>
+                </div>
+            </div>
+        `;
+        messages.scrollTop = messages.scrollHeight;
+    }, 1000);
+}
+
+// Initialize
+window.addEventListener('DOMContentLoaded', () => {
+    // Dashboard is shown by default
+});
+</script>
+
+</body>
+</html>
